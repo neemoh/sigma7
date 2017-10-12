@@ -24,8 +24,8 @@ catkin_package()
 
 add_executable(master
         src/main_master.cpp
-        src/HapticDeviceState.cpp
-        src/HapticDeviceState.hpp)
+        src/SigmaDevice.cpp
+        src/SigmaDevice.hpp)
 
 target_link_libraries(master
         ${catkin_LIBRARIES}

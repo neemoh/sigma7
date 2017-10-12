@@ -25,13 +25,13 @@
 //-----------------------------------------------------------------------
 // Haptic device class
 //-----------------------------------------------------------------------
-class HapticDeviceState {
+class SigmaDevice {
 public:
-    HapticDeviceState(ros::NodeHandle n, const std::string name_space);
+    SigmaDevice(ros::NodeHandle n, const std::string name_space);
 
     void WrenchCallback( const geometry_msgs::WrenchStampedConstPtr &msg);
 
-    int CalibrateDevice(const int dev);
+    int CalibrateDevice();
 
     int ReadMeasurementsFromDevice();
 
@@ -47,7 +47,7 @@ private:
     ros::Publisher pub_twist;
     ros::Publisher pub_button;
     ros::Publisher pub_pedal;
-    ros::Subscriber force_feedback;
+    ros::Subscriber sub_wrench;
 
     geometry_msgs::PoseStamped pose_msg;
     geometry_msgs::TwistStamped twist_msg;

@@ -10,13 +10,13 @@
 */
 //==============================================================================
 
-#include "HapticDeviceState.hpp"
-int HapticDeviceState::id = -1;
+#include "SigmaDevice.hpp"
+int SigmaDevice::id = -1;
 
 //-----------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------
-HapticDeviceState::HapticDeviceState(ros::NodeHandle n,
+SigmaDevice::SigmaDevice(ros::NodeHandle n,
                                      const std::string ns)
         : new_wrench_msg(false)
 {
@@ -28,14 +28,14 @@ HapticDeviceState::HapticDeviceState(ros::NodeHandle n,
     pub_button  = n.advertise<std_msgs::Int8>(ns+"/button", 1, 0);
     pub_pedal = n.advertise <std_msgs::Int8> (ns+"/pedal", 1, 0);
 
-    force_feedback	= n.subscribe("/sigma/"+ns+"/forceFeedback", 1,
-                                    &HapticDeviceState::WrenchCallback, this);
+    sub_wrench	= n.subscribe("/sigma/"+ns+"/forceFeedback", 1,
+                                    &SigmaDevice::WrenchCallback, this);
 }
 
 
 //------------------------------------------------------------------------------
 // WrenchCallback
-void HapticDeviceState::WrenchCallback(
+void SigmaDevice::WrenchCallback(
         const geometry_msgs::WrenchStampedConstPtr &msg) {
     //newDataDirect = true;
     wrench.wrench = msg->wrench;
@@ -44,41 +44,43 @@ void HapticDeviceState::WrenchCallback(
 
 //------------------------------------------------------------------------------
 // CalibrateDevice
-int HapticDeviceState::CalibrateDevice(int const dev){
+int SigmaDevice::CalibrateDevice() {
     // center of workspace
     //	  double nullPose[DHD_MAX_DOF] = { 0.0, 0.0, 0.0,  // base  (translations)
     //	                                   0.0, 0.0, 0.0,  // wrist (rotations)
     //	                                   0.0 };          // gripper
 
     // open device
-    if (drdOpenID (dev) < 0) {
-        ROS_ERROR(" No device %i found. dhd says: (%s)",dev, dhdErrorGetLastStr());
+    if (drdOpenID ((char)id) < 0) {
+        ROS_ERROR("No device %i found. dhd says: %s", id, dhdErrorGetLastStr());
         dhdSleep (2.0);
-        for (int j=0; j<=dev; j++) drdClose (j);
+        drdClose ((char)id);
         return -1;
     }
 
     //Calibrate the device if it is not already calibrated;
-    if(drdIsInitialized(dev)){
-        ROS_INFO("Device %i is already calibrated.",dev);
+    if(drdIsInitialized((char)id)){
+        ROS_INFO("Device %i is already calibrated.", id);
     }
-    else if(drdAutoInit(dev)<0) {
-        ROS_ERROR("Initialization of device %i failed. dhd says: (%s)",dev, dhdErrorGetLastStr ());
+    else if(drdAutoInit((char)id)<0) {
+        ROS_ERROR("Initialization of device %i failed. dhd says: (%s)", id,
+                  dhdErrorGetLastStr ());
         dhdSleep(2.0);
     }
 
     // move to center
     //	drdMoveTo (nullPose);
     // stop regulation (and leave force enabled)
-    drdStop(true,dev);
+    drdStop(true, (char)id);
     // enable force
-    dhdEnableForce (DHD_ON, dev);
+    dhdEnableForce (DHD_ON, (char)id);
     //Enable the gripper button
-    dhdEmulateButton(DHD_ON, dev);
+    dhdEmulateButton(DHD_ON, (char)id);
+    ROS_INFO("Device %i ready.", id);
     return 0;
 }
 
-int HapticDeviceState::ReadMeasurementsFromDevice() {
+int SigmaDevice::ReadMeasurementsFromDevice() {
 
     // -------------------------------
     // Pose
@@ -124,7 +126,7 @@ int HapticDeviceState::ReadMeasurementsFromDevice() {
     return 0;
 }
 
-void HapticDeviceState::PublishPoseTwistButtonPedal() {
+void SigmaDevice::PublishPoseTwistButtonPedal() {
 
     pub_pose.publish(pose_msg);
     pub_twist.publish(twist_msg);
@@ -140,8 +142,9 @@ void HapticDeviceState::PublishPoseTwistButtonPedal() {
 
 }
 
-void HapticDeviceState::HandleWrench() {
+void SigmaDevice::HandleWrench() {
 
+    // should we use new_wrench_msg?
     if(pedal_state.data == 1) {
         if (dhdSetForceAndTorqueAndGripperForce(wrench.wrench.force.x,
                                                 wrench.wrench.force.y,

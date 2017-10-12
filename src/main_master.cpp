@@ -11,53 +11,50 @@
 //==============================================================================
 
 #include <sstream>
-#include "HapticDeviceState.hpp"
+#include "SigmaDevice.hpp"
+
+void CheckAvailableDevices(int &devs);
 
 int main(int argc, char** argv) {
-
-    // -------------------------------------------------------------------------
-    // Initialization: Sigma
-    int devs=-1;
-    //	bool use_pedal = 0;
-
-    // Looking for connected devices
-    for (int i = 0; i<2 ; i++){
-        if (drdOpenID ((char)i) > -1) {
-            devs = i;
-        }
-    }
-
-    ROS_INFO("Found %i Device(s)", devs+1);
 
     ros::init(argc, argv, "master");
     ros::NodeHandle n(ros::this_node::getName());
 
-    HapticDeviceState * sigma[devs+1];
+    // Locking call looking for connected devices.
+    // devs is the number of available devices
+    int devs=0;
+    CheckAvailableDevices(devs);
 
-    // calibrating devices
-    for (int i=0; i<=devs; i++){
-        sigma[i] = new HapticDeviceState(n, "right");
+    // declare device pointers
+    SigmaDevice * sigma[devs];
+
+    // Initialize devices
+    for (int i=0; i<devs; i++){
+
+        std::stringstream dev_names;
+        dev_names << "sigma"<< i;
+        sigma[i] = new SigmaDevice(n, dev_names.str());
+
         ROS_INFO("Calibrating device %i ...", i);
-        if(sigma[i]->CalibrateDevice(i) >-1) ROS_INFO("Device %i ready.", i);
+        if(sigma[i]->CalibrateDevice() == -1)
+            ros::shutdown();
     }
 
+    // get ros parameters
     double freq_ros;
     n.param<double>("/sigma_frequency", freq_ros, 1000);
     ROS_INFO("Set frequency: %f", freq_ros);
     ros::Rate loop_rate(freq_ros);
 
-    //    n.param<bool>("/sigma_use_pedal", use_pedal, 0);
-    //	ROS_INFO("Use pedal: %i", use_pedal);
+//        n.param<bool>("/sigma_use_pedal", use_pedal, 0);
+//    	ROS_INFO("Use pedal: %i", use_pedal);
 
-
-    ROS_INFO("Initialization done");
-
-    geometry_msgs::WrenchStamped Wrench_temp;
+    ROS_INFO("Initialization done.");
 
     while (ros::ok()) {
 
         // Reading Sigma measurements and setting the force
-        for (int i=0; i<=devs; i++){
+        for (int i=0; i<devs; i++){
 
             sigma[i]->ReadMeasurementsFromDevice();
 
@@ -73,16 +70,30 @@ int main(int argc, char** argv) {
     }
 
     ROS_INFO("Ending Session...\n");
-    for (int i=0; i<=devs; i++){
-        if (dhdClose ((char)i) < 0) {
+    for (int i=0; i<devs; i++){
+        if (dhdClose ((char)i) < 0)
             ROS_ERROR (" %s\n", dhdErrorGetLastStr ());
-        }
-        else{
+        else
             ROS_INFO("Closed device %i" ,i );
-        }
+
+        delete sigma[i];
+
     }
-    delete sigma[0];
-    delete sigma[1];
     return 0;
 
 }
+
+
+void CheckAvailableDevices(int &devs) {
+    while(devs==0) {
+        for (int i = 0; i < 2; i++) {
+            if (drdOpenID((char) i) > -1)
+                devs = i;
+        }
+        ros::Rate r(0.5);
+        r.sleep();
+        ROS_INFO("Looking for connected devices...");
+    }
+
+    ROS_INFO("Found %i Device(s)", devs);
+};
