@@ -25,11 +25,16 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n,
     // setup the publishers and the subscriber
     pub_pose = n.advertise<geometry_msgs::PoseStamped>(ns+"/pose",1, 0);
     pub_twist = n.advertise<geometry_msgs::TwistStamped>(ns+"/twist", 1, 0);
+    pub_gripper = n.advertise<std_msgs::Float64>(ns+"/gripper_angle", 1, 0);
     pub_button  = n.advertise<std_msgs::Int8>(ns+"/button", 1, 0);
     pub_pedal = n.advertise <std_msgs::Int8> (ns+"/pedal", 1, 0);
 
     sub_wrench	= n.subscribe("/sigma/"+ns+"/forceFeedback", 1,
                                     &SigmaDevice::WrenchCallback, this);
+
+    // params
+    n.param<bool>("enable_gripper_button", enable_gripper_button, 0);
+    n.param<bool>("lock_orientation", lock_orient, 0);
 }
 
 
@@ -45,10 +50,6 @@ void SigmaDevice::WrenchCallback(
 //------------------------------------------------------------------------------
 // CalibrateDevice
 int SigmaDevice::CalibrateDevice() {
-    // center of workspace
-    //	  double nullPose[DHD_MAX_DOF] = { 0.0, 0.0, 0.0,  // base  (translations)
-    //	                                   0.0, 0.0, 0.0,  // wrist (rotations)
-    //	                                   0.0 };          // gripper
 
     // open device
     if (drdOpenID ((char)id) < 0) {
@@ -68,14 +69,23 @@ int SigmaDevice::CalibrateDevice() {
         dhdSleep(2.0);
     }
 
-    // move to center
-    //	drdMoveTo (nullPose);
+    // // center of workspace
+    //	 double nullPose[DHD_MAX_DOF] = { 0.0, 0.0, 0.0, //base  (translations)
+    //	                                  0.0, 0.0, 0.0, //wrist (rotations)
+    //	                                  0.0 };         //gripper
+    // //move to center
+    // drdMoveTo (nullPose);
+
     // stop regulation (and leave force enabled)
     drdStop(true, (char)id);
+
     // enable force
     dhdEnableForce (DHD_ON, (char)id);
+
     //Enable the gripper button
-    dhdEmulateButton(DHD_ON, (char)id);
+    if(enable_gripper_button)
+        dhdEmulateButton(DHD_ON, (char)id);
+
     ROS_INFO("Device %i ready.", id);
     return 0;
 }
@@ -116,6 +126,10 @@ int SigmaDevice::ReadMeasurementsFromDevice() {
     twist_msg.header.stamp = ros::Time::now();
 
     // ------------------------------
+    // gripper
+    dhdGetGripperAngleRad(&gripper_angle.data);
+
+    // ------------------------------
     // buttons
     // saving the previous states of button and pedal
     sigma_button_previous_state = sigma_button_state;
@@ -131,6 +145,10 @@ void SigmaDevice::PublishPoseTwistButtonPedal() {
     pub_pose.publish(pose_msg);
     pub_twist.publish(twist_msg);
 
+    // Publish gripper angle
+    pub_gripper.publish(gripper_angle);
+
+    // publish button when there is a change
     if(sigma_button_state.data != sigma_button_previous_state.data){
         pub_button.publish(sigma_button_state);
     }
@@ -145,6 +163,7 @@ void SigmaDevice::PublishPoseTwistButtonPedal() {
 void SigmaDevice::HandleWrench() {
 
     // should we use new_wrench_msg?
+
     if(pedal_state.data == 1) {
         if (dhdSetForceAndTorqueAndGripperForce(wrench.wrench.force.x,
                                                 wrench.wrench.force.y,
@@ -155,14 +174,14 @@ void SigmaDevice::HandleWrench() {
                                                 0.0, (char)id) < DHD_NO_ERROR){
             printf("error: cannot set force (%s)\n", dhdErrorGetLastStr());
         }
-        dhdGetOrientationRad(&last_orient[0], &last_orient[1],&last_orient[2]);
+        dhdGetOrientationRad(&locked_orient[0], &locked_orient[1],&locked_orient[2]);
     }
-    else{
+    else if (lock_orient){
         drdRegulatePos  (false);
         drdRegulateRot  (true);
         drdRegulateGrip (false);
         drdStart();
-        drdMoveToRot (last_orient[0], last_orient[1],last_orient[2]);
+        drdMoveToRot (locked_orient[0], locked_orient[1],locked_orient[2]);
         drdStop(true);
     }
 

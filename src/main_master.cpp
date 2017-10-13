@@ -41,13 +41,10 @@ int main(int argc, char** argv) {
     }
 
     // get ros parameters
-    double freq_ros;
-    n.param<double>("/sigma_frequency", freq_ros, 1000);
-    ROS_INFO("Set frequency: %f", freq_ros);
-    ros::Rate loop_rate(freq_ros);
-
-//        n.param<bool>("/sigma_use_pedal", use_pedal, 0);
-//    	ROS_INFO("Use pedal: %i", use_pedal);
+    double rate;
+    n.param<double>("frequency", rate, 1000);
+    ROS_INFO("Set frequency: %f", rate);
+    ros::Rate loop_rate(rate);
 
     ROS_INFO("Initialization done.");
 
@@ -66,7 +63,6 @@ int main(int argc, char** argv) {
 
         ros::spinOnce();
         loop_rate.sleep();
-
     }
 
     ROS_INFO("Ending Session...\n");
