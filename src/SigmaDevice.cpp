@@ -29,8 +29,10 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n,
     pub_button  = n.advertise<std_msgs::Int8>(ns+"/button", 1, 0);
     pub_pedal = n.advertise <std_msgs::Int8> (ns+"/pedal", 1, 0);
 
-    sub_wrench	= n.subscribe("/sigma/"+ns+"/forceFeedback", 1,
-                                    &SigmaDevice::WrenchCallback, this);
+    std::string wrench_topic;
+    n.getParam("wrench_topic", wrench_topic);
+    sub_wrench	= n.subscribe(wrench_topic.c_str(), 1,
+                                &SigmaDevice::WrenchCallback, this);
 
     // params
     n.param<bool>("enable_gripper_button", enable_gripper_button, 0);
