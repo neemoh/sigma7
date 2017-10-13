@@ -17,7 +17,7 @@ void CheckAvailableDevices(int &devs);
 
 int main(int argc, char** argv) {
 
-    ros::init(argc, argv, "master");
+    ros::init(argc, argv, "sigma7");
     ros::NodeHandle n(ros::this_node::getName());
 
     // Locking call looking for connected devices.
@@ -81,10 +81,11 @@ int main(int argc, char** argv) {
 
 
 void CheckAvailableDevices(int &devs) {
+
     while(devs==0) {
         for (int i = 0; i < 2; i++) {
             if (drdOpenID((char) i) > -1)
-                devs = i;
+                devs = i+1;
         }
         ros::Rate r(0.5);
         r.sleep();

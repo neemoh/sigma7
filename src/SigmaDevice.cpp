@@ -29,7 +29,7 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n,
     pub_button  = n.advertise<std_msgs::Int8>(ns+"/button", 1, 0);
     pub_pedal = n.advertise <std_msgs::Int8> (ns+"/pedal", 1, 0);
 
-    std::string wrench_topic;
+    std::string wrench_topic("/sigma/force_feedback");
     n.getParam("wrench_topic", wrench_topic);
     sub_wrench	= n.subscribe(wrench_topic.c_str(), 1,
                                 &SigmaDevice::WrenchCallback, this);
@@ -84,6 +84,8 @@ int SigmaDevice::CalibrateDevice() {
     // enable force
     dhdEnableForce (DHD_ON, (char)id);
 
+//    dhdSetGravityCompensation(DHD_ON, (char)id);
+    dhdSleep (0.2);
     //Enable the gripper button
     if(enable_gripper_button)
         dhdEmulateButton(DHD_ON, (char)id);
@@ -186,6 +188,11 @@ void SigmaDevice::HandleWrench() {
         drdMoveToRot (locked_orient[0], locked_orient[1],locked_orient[2]);
         drdStop(true);
     }
+    else{
+        if (dhdSetForceAndTorqueAndGripperForce(.0, .0, .0, .0, .0, .0, 0.,
+                                                (char)id) < DHD_NO_ERROR)
+            printf("error: cannot set force (%s)\n", dhdErrorGetLastStr());
+        }
 
 }
 
