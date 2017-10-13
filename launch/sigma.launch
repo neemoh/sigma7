@@ -6,11 +6,11 @@
         <!--sigma can simulate a button with the gripper. THat is when yoy
         close the gripper it resists a bit at the end and and springs back
         when you release it.-->
-        <param name="enable_gripper_button" value="0" />
+        <param name="enable_gripper_button" value="true" />
 
         <!--we can lock the orientation when the pedal is released. This is
         useful for teleoperation-->
-        <param name="lock_orient" value="0" />
+        <param name="lock_orientation" value="true" />
 
         <!-- The topic from which the node reads wrenches to be applied by
         the device-->
