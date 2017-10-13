@@ -36,9 +36,6 @@ public:
     // that the sigma device will exert to the operator's hand.
     void WrenchCallback( const geometry_msgs::WrenchStampedConstPtr &msg);
 
-    // Calibrates the device using the SDK commands
-    int CalibrateDevice();
-
     // Fetches all the measurements (Pose, Twist, button and pedal) from the
     // device
     int ReadMeasurementsFromDevice();
@@ -49,6 +46,11 @@ public:
 
     // Exert wrenches if any.
     void HandleWrench();
+
+private:
+
+    // Calibrates the device using the SDK commands
+    int CalibrateDevice();
 
 private:
 

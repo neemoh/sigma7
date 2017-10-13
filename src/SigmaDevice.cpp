@@ -6,7 +6,7 @@
 
     \author    <http://nearlab.polimi.it/>
     \author    Nima Enayati
-    \version   -
+    \version   2.0
 */
 //==============================================================================
 
@@ -37,6 +37,10 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n,
     // params
     n.param<bool>("enable_gripper_button", enable_gripper_button, 0);
     n.param<bool>("lock_orientation", lock_orient, 0);
+
+    // calibrate the devices
+    if(CalibrateDevice() == -1)
+        ros::shutdown();
 }
 
 
@@ -52,6 +56,8 @@ void SigmaDevice::WrenchCallback(
 //------------------------------------------------------------------------------
 // CalibrateDevice
 int SigmaDevice::CalibrateDevice() {
+
+    ROS_INFO("Calibrating device %i ...", id);
 
     // open device
     if (drdOpenID ((char)id) < 0) {

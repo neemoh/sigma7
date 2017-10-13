@@ -30,17 +30,12 @@ int main(int argc, char** argv) {
 
     // Initialize devices
     for (int i=0; i<devs; i++){
-
         std::stringstream dev_names;
         dev_names << "sigma"<< i;
         sigma[i] = new SigmaDevice(n, dev_names.str());
-
-        ROS_INFO("Calibrating device %i ...", i);
-        if(sigma[i]->CalibrateDevice() == -1)
-            ros::shutdown();
     }
 
-    // get ros parameters
+    // get the frequency parameter
     double rate;
     n.param<double>("frequency", rate, 1000);
     ROS_INFO("Set frequency: %f", rate);
@@ -71,12 +66,10 @@ int main(int argc, char** argv) {
             ROS_ERROR (" %s\n", dhdErrorGetLastStr ());
         else
             ROS_INFO("Closed device %i" ,i );
-
         delete sigma[i];
-
     }
-    return 0;
 
+    return 0;
 }
 
 
