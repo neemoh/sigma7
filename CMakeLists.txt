@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 include_directories(
-        # include
         ${catkin_INCLUDE_DIRS}
 )
 
@@ -25,13 +24,14 @@ catkin_package()
 add_executable(master
         src/main_master.cpp
         src/SigmaDevice.cpp
-        src/SigmaDevice.hpp)
+        src/SigmaDevice.hpp
+        )
 
 target_link_libraries(master
         ${catkin_LIBRARIES}
         dhd
         drd
-        libusb-1.0.so.0 -lrt
+        usb-1.0 -lrt
         pthread
         )
 
