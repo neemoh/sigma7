@@ -4,13 +4,13 @@ This ros node interfaces with a Force Dimension Sigma master device.
 
 ## Topics
 The following topics are published to:
-* /pose  <PoseStamped> Cartesian pose of the end effector.
-* /buttons <Joy> Contains the states of two buttons of sigma. First is the 
+* /pose  type:PoseStamped - Cartesian pose of the end effector.
+* /buttons type:Joy - Contains the states of two buttons of sigma. First is the 
 gripper button emulation, and second is the foot pedal.
-* /twist  <TwistStamped> Cartesian velocities of the end-effector
+* /twist  type:TwistStamped - Cartesian velocities of the end-effector
 
 The following topic is subscribed to:
-* /force_feedback <WrenchStamped> Receives wrench information and when
+* /force_feedback type:WrenchStamped - Receives wrench information and when
 the foot pedal is pressed it sends the wrenches to the sigma device. Note
 that you can lock the orientation of the end-effector (useful in 
 tele-operation) when the foot-pedal is released if you set the 
