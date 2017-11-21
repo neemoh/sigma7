@@ -3,7 +3,8 @@
 This ros node interfaces with a Force Dimension Sigma master device.
 
 ## Topics
-The following topics are published to:
+The following topics under the name space /sigma/sigma<device_number>/ are 
+published to:
 * /pose  type:PoseStamped - Cartesian pose of the end effector.
 * /buttons type:Joy - Contains the states of two buttons of sigma. First is the 
 gripper button emulation, and second is the foot pedal.
