@@ -4,6 +4,22 @@
     Copyright (c) 2016, Nearlab
     Refer to Readme.txt for full license text
 
+    \description: This ros node interface with a Force Dimension Sigma master
+    device.
+
+    The following topics are published to:
+    - /pose  <PoseStamped> Cartesian pose of the end effector.
+    - /buttons <Joy> Contains the states of two buttons of sigma. First is
+    the gripper button emulation, and second is the foot pedal.
+    - /twist  <TwistStamped> Cartesian velocities of the end-effector
+
+    The following topic is subscribed to:
+    - /force_feedback <WrenchStamped> Receives wrench informatino and when
+    the foot pedal is pressed it sends the wrenches to the sigma device. Note
+    that you can lock the orientation of the end-effector (usefull in
+    tele-operation) when the foot-pedal is released if you set the
+    lock_orientation parameter as true.
+
     \author    <http://nearlab.polimi.it/>
     \author    Nima Enayati
     \version   2.0
@@ -75,7 +91,7 @@ int main(int argc, char** argv) {
 
 void CheckAvailableDevices(int &devs) {
 
-    while(devs==0) {
+    while(ros::ok() && devs==0) {
         for (int i = 0; i < 2; i++) {
             if (drdOpenID((char) i) > -1)
                 devs = i+1;

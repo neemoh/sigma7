@@ -21,6 +21,7 @@
 // Sigma
 #include <dhdc.h>
 #include <drdc.h>
+#include <sensor_msgs/Joy.h>
 
 
 //-----------------------------------------------------------------------
@@ -61,33 +62,34 @@ private:
     // sigma can simulate a button with the gripper. THat is when yoy close
     // the gripper it resists a bit at the end and and springs back when you
     // release it.
-    bool enable_gripper_button;
+    bool enable_gripper_button=0;
 
     // we can lock the orientation when the pedal is released. This is
     // useful for teleoperation
-    bool lock_orient;
+    bool lock_orient=0;
 
 
     // the orientation matric in the locked state
-    double locked_orient[3];
+    double locked_orient[3]={0., 0., 0.};
 
     geometry_msgs::PoseStamped pose_msg;
     geometry_msgs::TwistStamped twist_msg;
     geometry_msgs::WrenchStamped wrench;
     bool new_wrench_msg;
-
-    // the button and pedal state and their previous state
-    std_msgs::Int8 sigma_button_state;
-    std_msgs::Int8 sigma_button_previous_state;
     std_msgs::Float64 gripper_angle;
-    std_msgs::Int8 pedal_state;
-    std_msgs::Int8 pedal_previous_state;
+
+    // the gripper button and pedal state and their previous state
+    int buttons_state[2];
+    int buttons_previous_state[2];
+
+    sensor_msgs::Joy buttons_msg; // two elements, 0 is gripper button, 1
+    // is pedal
+    int pedal_previous_state;
 
     // publishers and subscribers
     ros::Publisher pub_pose;
     ros::Publisher pub_twist;
     ros::Publisher pub_gripper;
-    ros::Publisher pub_button;
-    ros::Publisher pub_pedal;
+    ros::Publisher pub_buttons;
     ros::Subscriber sub_wrench;
 };

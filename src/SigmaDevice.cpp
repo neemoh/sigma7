@@ -11,13 +11,14 @@
 //==============================================================================
 
 #include "SigmaDevice.hpp"
+#include <sensor_msgs/Joy.h>
+
 int SigmaDevice::id = -1;
 
 //-----------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------
-SigmaDevice::SigmaDevice(ros::NodeHandle n,
-                                     const std::string ns)
+SigmaDevice::SigmaDevice(ros::NodeHandle n, const std::string ns)
         : new_wrench_msg(false)
 {
     id++;
@@ -26,13 +27,12 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n,
     pub_pose = n.advertise<geometry_msgs::PoseStamped>(ns+"/pose",1, 0);
     pub_twist = n.advertise<geometry_msgs::TwistStamped>(ns+"/twist", 1, 0);
     pub_gripper = n.advertise<std_msgs::Float64>(ns+"/gripper_angle", 1, 0);
-    pub_button  = n.advertise<std_msgs::Int8>(ns+"/button", 1, 0);
-    pub_pedal = n.advertise <std_msgs::Int8> (ns+"/pedal", 1, 0);
+    pub_buttons = n.advertise <sensor_msgs::Joy> (ns+"/buttons", 1, 0);
 
     std::string wrench_topic("/sigma/force_feedback");
     n.getParam("wrench_topic", wrench_topic);
-    sub_wrench	= n.subscribe(wrench_topic.c_str(), 1,
-                                &SigmaDevice::WrenchCallback, this);
+    sub_wrench	= n.subscribe(wrench_topic, 1, &SigmaDevice::WrenchCallback,
+                                this);
 
     // params
     n.param<bool>("enable_gripper_button", enable_gripper_button, 0);
@@ -141,12 +141,12 @@ int SigmaDevice::ReadMeasurementsFromDevice() {
 
     // ------------------------------
     // buttons
-    // saving the previous states of button and pedal
-    sigma_button_previous_state = sigma_button_state;
-    sigma_button_state.data = dhdGetButton(0, (char)id);
+    // saving the previous states of gripper button and pedal
+    for (int i = 0; i < 2; ++i) {
+        buttons_previous_state[i] = buttons_state[i];
+        buttons_state[i] = dhdGetButton(i, (char)id);
+    }
 
-    pedal_previous_state = pedal_state;
-    pedal_state.data = dhdGetButton(1, (char)id);
     return 0;
 }
 
@@ -158,23 +158,24 @@ void SigmaDevice::PublishPoseTwistButtonPedal() {
     // Publish gripper angle
     pub_gripper.publish(gripper_angle);
 
-    // publish button when there is a change
-    if(sigma_button_state.data != sigma_button_previous_state.data){
-        pub_button.publish(sigma_button_state);
+    // publish buttons when there is a change
+    if((buttons_state[0] != buttons_previous_state[0]) ||
+            (buttons_state[1] != buttons_previous_state[1]) ){
+
+        // populate the message
+        buttons_msg.buttons[0] = buttons_state[0];
+        buttons_msg.buttons[1] = buttons_state[1];
+        // publish it
+        pub_buttons.publish(buttons_msg);
     }
 
-    //Publish pedal only when it changes
-    if(pedal_state.data != pedal_previous_state.data){
-        pub_pedal.publish(pedal_state);
-    }
 
 }
 
 void SigmaDevice::HandleWrench() {
 
     // should we use new_wrench_msg?
-
-    if(pedal_state.data == 1) {
+    if(buttons_state[0] == 1) {
         if (dhdSetForceAndTorqueAndGripperForce(wrench.wrench.force.x,
                                                 wrench.wrench.force.y,
                                                 wrench.wrench.force.z,
