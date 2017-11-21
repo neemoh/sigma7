@@ -14,7 +14,7 @@
 #include "ros/ros.h"
 #include <tf_conversions/tf_kdl.h>
 #include <std_msgs/Int8.h>
-#include <std_msgs/Float64.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 
@@ -76,7 +76,7 @@ private:
     geometry_msgs::TwistStamped twist_msg;
     geometry_msgs::WrenchStamped wrench;
     bool new_wrench_msg;
-    std_msgs::Float64 gripper_angle;
+    std_msgs::Float32 gripper_angle;
 
     // the gripper button and pedal state and their previous state
     int buttons_state[2];

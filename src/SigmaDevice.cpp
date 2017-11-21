@@ -26,7 +26,7 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n, const std::string ns)
     // setup the publishers and the subscriber
     pub_pose = n.advertise<geometry_msgs::PoseStamped>(ns+"/pose",1, 0);
     pub_twist = n.advertise<geometry_msgs::TwistStamped>(ns+"/twist", 1, 0);
-    pub_gripper = n.advertise<std_msgs::Float64>(ns+"/gripper_angle", 1, 0);
+    pub_gripper = n.advertise<std_msgs::Float32>(ns+"/gripper_angle", 1, 0);
     pub_buttons = n.advertise <sensor_msgs::Joy> (ns+"/buttons", 1, 0);
 
     std::string wrench_topic("/sigma/force_feedback");
@@ -41,6 +41,9 @@ SigmaDevice::SigmaDevice(ros::NodeHandle n, const std::string ns)
     // calibrate the devices
     if(CalibrateDevice() == -1)
         ros::shutdown();
+
+    buttons_msg.buttons.push_back(0);
+    buttons_msg.buttons.push_back(0);
 }
 
 
@@ -137,8 +140,9 @@ int SigmaDevice::ReadMeasurementsFromDevice() {
 
     // ------------------------------
     // gripper
-    dhdGetGripperAngleRad(&gripper_angle.data);
-
+    double temp;
+    dhdGetGripperAngleRad(&temp);
+    gripper_angle.data = (float)temp;
     // ------------------------------
     // buttons
     // saving the previous states of gripper button and pedal
@@ -175,7 +179,7 @@ void SigmaDevice::PublishPoseTwistButtonPedal() {
 void SigmaDevice::HandleWrench() {
 
     // should we use new_wrench_msg?
-    if(buttons_state[0] == 1) {
+    if(buttons_state[1] == 1) {
         if (dhdSetForceAndTorqueAndGripperForce(wrench.wrench.force.x,
                                                 wrench.wrench.force.y,
                                                 wrench.wrench.force.z,

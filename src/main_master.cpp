@@ -33,7 +33,7 @@ void CheckAvailableDevices(int &devs);
 
 int main(int argc, char** argv) {
 
-    ros::init(argc, argv, "sigma7");
+    ros::init(argc, argv, "sigma");
     ros::NodeHandle n(ros::this_node::getName());
 
     // Locking call looking for connected devices.
