@@ -1,8 +1,8 @@
 # Force Dimension Sigma ROS Node
 
-This ros node interface with a Force Dimension Sigma master device.
+This ros node interfaces with a Force Dimension Sigma master device.
 
-##Topics
+## Topics
 The following topics are published to:
 * /pose  <PoseStamped> Cartesian pose of the end effector.
 * /buttons <Joy> Contains the states of two buttons of sigma. First is the 
